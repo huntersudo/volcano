@@ -57,7 +57,7 @@ func (gp *gangPlugin) OnSessionOpen(ssn *framework.Session) {
 				Message: fmt.Sprintf("Failed to convert <%v> to *JobInfo", obj),
 			}
 		}
-
+  // 判断是否有效的job
 		if valid := job.CheckTaskMinAvailable(); !valid {
 			return &api.ValidateResult{
 				Pass:    false,
@@ -77,9 +77,11 @@ func (gp *gangPlugin) OnSessionOpen(ssn *framework.Session) {
 		}
 		return nil
 	}
-
+    // 把函数变量添加上去
 	ssn.AddJobValidFn(gp.Name(), validJobFn)
 
+	//接收 抢占者的task，一系列被抢占的task，
+	// 怎么在候选的task里，挑选可以去抢占他们的资源的
 	preemptableFn := func(preemptor *api.TaskInfo, preemptees []*api.TaskInfo) []*api.TaskInfo {
 		var victims []*api.TaskInfo
 		pJob := ssn.Jobs[preemptor.Job]
@@ -87,7 +89,7 @@ func (gp *gangPlugin) OnSessionOpen(ssn *framework.Session) {
 		for _, preemptee := range preemptees {
 			job := ssn.Jobs[preemptee.Job]
 
-			preemptable := pJob.Priority > job.Priority
+			preemptable := pJob.Priority > job.Priority  //优先级比较
 
 			if !preemptable {
 				klog.V(4).Infof("Can not preempt task <%v/%v> because of gang-scheduling",
@@ -102,9 +104,13 @@ func (gp *gangPlugin) OnSessionOpen(ssn *framework.Session) {
 		return victims
 	}
 
+	// 找到一堆候选者，返回给framwork
 	// TODO(k82cn): Support preempt/reclaim batch job.
 	ssn.AddReclaimableFn(gp.Name(), preemptableFn)
 	ssn.AddPreemptableFn(gp.Name(), preemptableFn)
+
+	// 一个队列里，有多个作业，如何排优先级
+	// 对于gang来说  left， right
 
 	jobOrderFn := func(l, r interface{}) int {
 		lv := l.(*api.JobInfo)
@@ -116,7 +122,7 @@ func (gp *gangPlugin) OnSessionOpen(ssn *framework.Session) {
 		klog.V(4).Infof("Gang JobOrderFn: <%v/%v> is ready: %t, <%v/%v> is ready: %t",
 			lv.Namespace, lv.Name, lReady, rv.Namespace, rv.Name, rReady)
 
-		if lReady && rReady {
+		if lReady && rReady {  // 最小可用资源没有被满足的作业，优先级较高
 			return 0
 		}
 
@@ -127,11 +133,25 @@ func (gp *gangPlugin) OnSessionOpen(ssn *framework.Session) {
 		if rReady {
 			return -1
 		}
+		// 不知为何，后续被删除了
+		// 如果最小可用资源都被满足了，则比较创建时间、UID等
+		if !lReady && !rReady{
+			if lv.CreationTimestamp.Equal(&rv.CreationTimestamp){
+				if lv.UID<rv.UID{
+					return -1
+				}
+			}else if lv.CreationTimestamp.Before(&rv.CreationTimestamp){
+				return -1
+			}
+		}
+
 
 		return 0
 	}
-
+   // 添加到framework
 	ssn.AddJobOrderFn(gp.Name(), jobOrderFn)
+
+	// 怎么样定义 job 是否ready
 	ssn.AddJobReadyFn(gp.Name(), func(obj interface{}) bool {
 		ji := obj.(*api.JobInfo)
 		return ji.Ready()

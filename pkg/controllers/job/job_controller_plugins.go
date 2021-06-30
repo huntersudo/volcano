@@ -29,6 +29,12 @@ import (
 
 func (cc *jobcontroller) pluginOnPodCreate(job *batch.Job, pod *v1.Pod) error {
 	client := pluginsinterface.PluginClientset{KubeClients: cc.kubeClient}
+	// 这里去遍历 ssh，svc,env 插件,每个插件可能会需要对pod做些什么
+	// env 插件： 添加 pod的 env 变量： VK_TASK_INDEX VC_TASK_INDEX
+	// ssh 插件： 添加  sshkey的 Secret
+	// svc 插件： create Serivce and *.host to enable pods communicate.
+	// Add `hostname` and `subdomain` for pod, mount service config for pod.
+	//  configmap方式去添加：  VC_%s_HOSTS[is the key for host list in environment] ,VC_%s_NUM[is the key for host number in environment]
 	for name, args := range job.Spec.Plugins {
 		pb, found := plugins.GetPluginBuilder(name)
 		if !found {

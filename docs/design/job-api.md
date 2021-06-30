@@ -378,7 +378,7 @@ spec:
 
 In addition to multiple pod template, the priority of each task maybe different. `PriorityClass` of `PodTemplate` is reused
 to define the priority of task within a job. This's an example to run spark job: 1 driver with 5 executors, the driver's
-priority is `master-pri` which is higher than normal pods; as `spec.minAvailable` is 3, the scheduler will make sure one driver
+priority is `master-pri` which is higher than normal pods; as `spec.minAvailable` is 3, the scheduler will make sure 1 driver
 with 2 executors will be scheduled if not enough resources.
 
 ```yaml

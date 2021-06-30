@@ -76,7 +76,7 @@ func (sp *servicePlugin) addFlags() {
 func (sp *servicePlugin) OnPodCreate(pod *v1.Pod, job *batch.Job) error {
 	// Add `hostname` and `subdomain` for pod, mount service config for pod.
 	// A pod with `hostname` and `subdomain` will have the fully qualified domain name(FQDN)
-	// `hostname.subdomain.namespace.svc.cluster-domain.example`.
+	// todo `hostname.subdomain.namespace.svc.cluster-domain.example`.
 	// If there exists a headless service in the same namespace as the pod and with the
 	// same name as the `subdomain`, the cluster's KubeDNS Server will returns an A record for
 	// the Pods's fully qualified hostname, pointing to the Pod’s IP.
@@ -136,7 +136,7 @@ func (sp *servicePlugin) OnJobAdd(job *batch.Job) error {
 	if err := helpers.CreateOrUpdateConfigMap(job, sp.Clientset.KubeClients, hostFile, sp.cmName(job)); err != nil {
 		return err
 	}
-
+	// todo ?
 	if err := sp.createServiceIfNotExist(job); err != nil {
 		return err
 	}
@@ -336,7 +336,8 @@ func GenerateHosts(job *batch.Job) map[string]string {
 				break
 			}
 		}
-
+        // /etc/volcano/ps.host
+        // /etc/volcano/worker.host
 		key := fmt.Sprintf(ConfigMapTaskHostFmt, ts.Name)
 		hostFile[key] = strings.Join(hosts, "\n")
 

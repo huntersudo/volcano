@@ -61,12 +61,17 @@ func (sp *sshPlugin) Name() string {
 	return "ssh"
 }
 
+// OnPodCreate
+// 每创建一个pod的时候，把srcret  mount进去pod里，pod就可以免密登录
 func (sp *sshPlugin) OnPodCreate(pod *v1.Pod, job *batch.Job) error {
 	sp.mountRsaKey(pod, job)
 
 	return nil
 }
 
+// OnJobAdd
+// 为每个作业生成ssh
+// 把ssh的数据，创建一个secret来存放
 func (sp *sshPlugin) OnJobAdd(job *batch.Job) error {
 	if job.Status.ControlledResources["plugin-"+sp.Name()] == sp.Name() {
 		return nil
