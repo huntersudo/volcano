@@ -35,6 +35,7 @@ import (
 )
 
 // Session information for the current session
+// todo 这个插件定义了一堆函数，各个插件来实现这些函数，用于JOB调度
 type Session struct {
 	UID types.UID
 

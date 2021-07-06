@@ -80,7 +80,7 @@ func (gp *gangPlugin) OnSessionOpen(ssn *framework.Session) {
     // 把函数变量添加上去
 	ssn.AddJobValidFn(gp.Name(), validJobFn)
 
-	//接收 抢占者的task，一系列被抢占的task，
+	// 接收 抢占者的task，一系列被抢占的task，
 	// 怎么在候选的task里，挑选可以去抢占他们的资源的
 	preemptableFn := func(preemptor *api.TaskInfo, preemptees []*api.TaskInfo) []*api.TaskInfo {
 		var victims []*api.TaskInfo
